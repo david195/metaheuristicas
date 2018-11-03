@@ -1,0 +1,19 @@
+Agente viajero
+
+1-Generar datos:
+    -> número de cidudades, tamaño de poblacion, ngeneraciones. 
+    -> Distribución
+        a) perimetro de un circulo
+        b) perimetro de un cuadrado
+        c) grafo aleatorio
+        
+2-Generar población
+    generar usando # ciudades
+    -> permutación
+        {rand() y shuffle()
+
+3-Error = distancia n0->n1 + n1->n2 ... nn -> n0
+
+4-Cruza: Revisar conflictos de repetición
+
+5-Ranking: Ruleta adaptada

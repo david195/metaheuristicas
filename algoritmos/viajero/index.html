@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Ejercicios resuletos con Metaheurísticas">
+    <meta name="author" content="David Ruiz García">
+
+    <title>Problema del viajero</title>
+
+    <!-- Bootstrap core CSS-->
+    <link href="../../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom fonts for this template-->
+    <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Page level plugin CSS-->
+    <link href="../../vendor/datatables/dataTables.bootstrap4.css" rel="stylesheet">
+
+    <!-- Custom styles for this template-->
+    <link href="../../css/sb-admin.css" rel="stylesheet">
+
+    <script src='js/genetico.js'></script>
+    <script src='js/genetico2.js'></script>
+    <script src='js/vis.min.js'></script>
+    <script>
+       function ordena(pob,arr){
+        const l = arr.length;
+        let j, temp;
+        for ( let i = 1; i < l; i++ ) {
+            j = i;
+            temp = arr[ i ];
+            temp2 = pob[ i ];
+            while ( j > 0 && arr[ j - 1 ] > temp ) {
+            arr[ j ] = arr[ j - 1 ];
+            pob[ j ] = pob[ j - 1 ];
+            j--;
+            }
+            arr[ j ] = temp;
+            pob[ j ] = temp2;
+        }
+        }
+      function $(id){return document.getElementById(id)};
+      function show_page(page){
+        $('page').src = page;
+      }
+      var problema= null, algoritmo = null;
+      function generar_grafo(){
+        var nciudades = parseInt($('nciudades').value);
+        var distancia = parseInt($('distancia').value);
+        var tipo_grafo = $('tipo_grafo').value;
+        problema = new grafo(nciudades, distancia,tipo_grafo);
+        problema.graficar('grafica');
+        var puntos = problema.generacion;
+        var Bhtml = '<table class="table table-dark">\
+                        <thead>\
+                            <tr>\
+                            <th scope="col">id</th>\
+                            <th scope="col">[x,y]</th>\
+                            </tr>\
+                        </thead>\
+                        <tbody>';
+        for(var i=0;i < puntos.length; i++){
+            Bhtml += '      <tr>\
+                            <th scope="col">'+ puntos[i].id +'</th>\
+                            <th scope="col">['+puntos[i].x + ' , ' + puntos[i].y + ']</th>\
+                            </tr>';
+        }
+        Bhtml += '</tbody></table>';
+        $('puntos').innerHTML = Bhtml;
+      }
+      
+      function ejecutar(){
+          var tampob = $('tampob').value;
+          var elitismo = $('elitismo').value;
+          var seleccion = $('tipo_seleccion').value;
+          var nmuestras = $('nmuestras').value;
+          var ngeneraciones = $('ngeneraciones').value;
+          algoritmo = new genetico(problema, tampob);
+          algoritmo.solve(elitismo, seleccion,ngeneraciones);
+          var generaciones = algoritmo.iteraciones;
+          var html = '';
+
+          for(var i=0; i<generaciones.length; i++){
+            ordena(generaciones[i].poblacion,generaciones[i].aptitudes);
+            var tabla = '<table class="table table-dark">\
+                        <thead>\
+                            <tr>\
+                            <th scope="col">Ruta</th>\
+                            <th scope="col">Error</th>\
+                            </tr>\
+                        </thead>\
+                        <tbody><tr>\
+                        <th scope="col">Generacion '+ i + ' </th>\
+                        </tr>';
+            for(var j=0; j<nmuestras; j++){
+                var pob = generaciones[i].poblacion[j].toString();
+                tabla += '<tr>\
+                        <th scope="col">'+ pob + '</th>\
+                        <th scope="col">' + generaciones[i].aptitudes[j] +'</th>\
+                        </tr>';
+            }
+            tabla += '</tbody></table>\
+                        <div id="graph'+ i +'" ></div>';
+            html+= tabla;
+            tabla = '';
+        }
+        html = '<div>' + html + '</div>';
+        $('datos').innerHTML = html;
+        for(var i=0; i<generaciones.length; i++){
+            console.log(generaciones[i].aptitudes[0]);
+            problema.setGeneracion(generaciones[i].poblacion[0]);
+            problema.graficar('graph'+i);   
+        }
+      }
+    </script>
+  </head>
+
+  <body id="page-top">
+    <div class="container">
+            <div class="row">
+                <form>
+                    <div class="form-group">
+                        <label for="nciudades">Número de ciudades</label>
+                        <input type="number" class="form-control" id="nciudades" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="distancia">Distancia del origen</label>
+                        <input type="number" class="form-control" id="distancia" value="50">
+                        <label for="tipo_grafo">Tipo de grafo</label>
+                        <select class="form-control" id="tipo_grafo">
+                        <option value="circulo">Circulo</option>
+                        <option value="cuadrado">Cuadrado</option>
+                        <option value="aleatorio">Aleatorio</option>
+                        </select>
+                        <label for="tampob">Tamaño de población</label>
+                        <input type="number" class="form-control" id="tampob" value="10">
+                        <label for="elitismo">Porcentaje de elitismo</label>
+                        <input type="number" class="form-control" id="elitismo" value="50">
+                        <label for="tipo_seleccion">Tipo de selección</label>
+                        <select class="form-control" id="tipo_seleccion">
+                            <option value="aleatorio">Aleatorio</option>
+                            <option value="ranking">Ranking</option>
+                            <option value="torneo">Torneo</option>
+                        </select>
+                        <label for="ngenraciones">Número de generaciones</label>
+                        <input type="number" class="form-control" id="ngeneraciones" value="10">
+                        <label for="nmuestras">Número de muestras</label>
+                        <input type="number" class="form-control" id="nmuestras" value="10">
+
+                    </div>
+
+                    <button type="button" class="btn btn-primary" onclick="generar_grafo()">Generar grafo</button>
+                    <button type="button" class="btn btn-primary" onclick="ejecutar()">Ejecutar algoritmo</button>
+                </form>
+            </div>
+            <div class="row">
+                <div class="w-50 p-3" style="height:'200px';background-color: #eee;" id='grafica'></div>
+                <div id= 'puntos' class="w-50 p-3" style="height:'200px';background-color: #eee;" id='grafica'>
+                </div>
+            </div>
+            <div class="row">
+                <div id= 'datos' class="w-50 p-3" style="height:'200px';background-color: #eee;" id='grafica'></div>
+            </div>
+            
+    </div>
+</body>
+
+</html>
