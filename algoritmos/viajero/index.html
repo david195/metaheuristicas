@@ -23,37 +23,33 @@
     <link href="../../css/sb-admin.css" rel="stylesheet">
 
     <script src='js/genetico.js'></script>
-    <script src='js/genetico2.js'></script>
     <script src='js/vis.min.js'></script>
     <script>
-       function ordena(pob,arr){
-        const l = arr.length;
-        let j, temp;
-        for ( let i = 1; i < l; i++ ) {
-            j = i;
-            temp = arr[ i ];
-            temp2 = pob[ i ];
-            while ( j > 0 && arr[ j - 1 ] > temp ) {
-            arr[ j ] = arr[ j - 1 ];
-            pob[ j ] = pob[ j - 1 ];
-            j--;
-            }
-            arr[ j ] = temp;
-            pob[ j ] = temp2;
-        }
-        }
       function $(id){return document.getElementById(id)};
       function show_page(page){
         $('page').src = page;
-      }
-      var problema= null, algoritmo = null;
-      function generar_grafo(){
-        var nciudades = parseInt($('nciudades').value);
-        var distancia = parseInt($('distancia').value);
-        var tipo_grafo = $('tipo_grafo').value;
-        problema = new grafo(nciudades, distancia,tipo_grafo);
-        problema.graficar('grafica');
-        var puntos = problema.generacion;
+        }
+    var nciudades = 10;
+    var distancia_origen = 50;
+    var tipo_grafo = 'circulo';
+    var tam_pob = 10;
+    var porcentaje_elitismo = 50;
+    var tipo_seleccion = 'aleatorio';
+    var ngeneraciones = 10;
+    var nmuestras = 10;
+    
+    function iniciar(){
+        nciudades = parseInt($('nciudades').value);
+        distancia = parseInt($('distancia').value);
+        tipo_grafo = $('tipo_grafo').value;
+        tam_pob = $('tampob').value;
+        porcentaje_elitismo = $('elitismo').value;
+        tipo_seleccion = $('tipo_seleccion').value;
+        nmuestras = $('nmuestras').value;
+        ngeneraciones = $('ngeneraciones').value;
+        genetico_run();
+
+
         var Bhtml = '<table class="table table-dark">\
                         <thead>\
                             <tr>\
@@ -70,51 +66,82 @@
         }
         Bhtml += '</tbody></table>';
         $('puntos').innerHTML = Bhtml;
-      }
-      
-      function ejecutar(){
-          var tampob = $('tampob').value;
-          var elitismo = $('elitismo').value;
-          var seleccion = $('tipo_seleccion').value;
-          var nmuestras = $('nmuestras').value;
-          var ngeneraciones = $('ngeneraciones').value;
-          algoritmo = new genetico(problema, tampob);
-          algoritmo.solve(elitismo, seleccion,ngeneraciones);
-          var generaciones = algoritmo.iteraciones;
-          var html = '';
 
-          for(var i=0; i<generaciones.length; i++){
-            ordena(generaciones[i].poblacion,generaciones[i].aptitudes);
-            var tabla = '<table class="table table-dark">\
-                        <thead>\
-                            <tr>\
-                            <th scope="col">Ruta</th>\
-                            <th scope="col">Error</th>\
-                            </tr>\
-                        </thead>\
-                        <tbody><tr>\
-                        <th scope="col">Generacion '+ i + ' </th>\
-                        </tr>';
-            for(var j=0; j<nmuestras; j++){
-                var pob = generaciones[i].poblacion[j].toString();
-                tabla += '<tr>\
-                        <th scope="col">'+ pob + '</th>\
-                        <th scope="col">' + generaciones[i].aptitudes[j] +'</th>\
-                        </tr>';
-            }
-            tabla += '</tbody></table>\
-                        <div id="graph'+ i +'" ></div>';
-            html+= tabla;
-            tabla = '';
+                var html = '';
+
+        for(var i=0; i<generaciones.length; i++){
+        var tabla = '<table class="table table-dark">\
+                    <thead>\
+                        <tr>\
+                        <th scope="col">Ruta</th>\
+                        <th scope="col">Error</th>\
+                        </tr>\
+                    </thead>\
+                    <tbody><tr>\
+                    <th scope="col">Generacion '+ i + ' </th>\
+                    </tr>';
+        for(var j=0; j<nmuestras; j++){
+            var ruta = '';
+            for(var k=0; k<generaciones[i][j].ruta.length; k++)
+                ruta += generaciones[i][j].ruta[k].id + ',';
+            tabla += '<tr>\
+                    <th scope="col">'+ ruta + '</th>\
+                    <th scope="col">' + generaciones[i][j].apt +'</th>\
+                    </tr>';
+        }
+        tabla += '</tbody></table>\
+                    <div id="graph'+ i +'" ></div>';
+        html+= tabla;
+        tabla = '';
         }
         html = '<div>' + html + '</div>';
         $('datos').innerHTML = html;
         for(var i=0; i<generaciones.length; i++){
-            console.log(generaciones[i].aptitudes[0]);
-            problema.setGeneracion(generaciones[i].poblacion[0]);
-            problema.graficar('graph'+i);   
+            var ruta = generaciones[i].mejor.ruta;  
+            graficar(ruta,'graph'+i);
         }
-      }
+
+        console.log(generaciones)
+    }
+
+      /**Grafica con vis js */
+      function graficar(datos,cont){
+        var container = null;
+        if(cont == null) container = document.createElement('div');
+        else container = document.getElementById(cont);
+        var nodes = [];
+        var edges = [];
+        var i = 0;
+        for(i; i<datos.length-1; i++){
+            datos[i].x *= datos.length;
+            datos[i].y *= datos.length;
+            datos[i].label = datos[i].id.toString();
+            edges.push({from:datos[i].id, to:datos[i+1].id});
+        }
+        datos[i].x *= datos.length;
+        datos[i].y *= datos.length;
+        datos[i].label = datos[i].id.toString();
+        //edges.push({from:nodes[nodes.length-1].id, to:nodes[0].id});
+        var data = {
+            nodes: new vis.DataSet(datos),
+            edges: new vis.DataSet(edges)
+          };
+        options = {
+        interaction:{
+            dragNodes:false,
+            hoverConnectedEdges:false,
+        },
+        physics:{
+            enabled:false
+        },
+        nodes:{
+            shape:'box',
+            size:1
+        }
+        };
+          this.graph = new vis.Network(container, data, options);     
+        }
+
     </script>
   </head>
 
@@ -152,8 +179,7 @@
 
                     </div>
 
-                    <button type="button" class="btn btn-primary" onclick="generar_grafo()">Generar grafo</button>
-                    <button type="button" class="btn btn-primary" onclick="ejecutar()">Ejecutar algoritmo</button>
+                    <button type="button" class="btn btn-primary" onclick="iniciar()">Ejecutar algoritmo</button>
                 </form>
             </div>
             <div class="row">
